@@ -1,8 +1,22 @@
-jsm README
-----------
+midivent README
+---------------
 
-1) Build steps under MacOSX
----------------------------
+midivent is a MIDI library for Node.js.  It is based on portmidi
+(http://sourceforge.net/apps/trac/portmedia/wiki/portmidi), so in
+theory it should work with Linux, MacOS X and Windows.  The main
+development platform is MacOS X.  It compiles on Ubuntu too.
+
+midivent is currently in alpha state.
+
+Please check out the documentation:  http://vaxbusters.org/midivent/
+
+Comments?  Suggestions?  Get in touch: hans.huebner@gmail.com
+
+Building
+--------
+
+1) Build steps under MacOS X
+----------------------------
 
 - install node and node-waf
 
@@ -17,7 +31,7 @@ jsm README
   $ sudo cp pm_common/pmutil /usr/local/include
 
 1.1) Build steps under Ubuntu GNU/Linux  
---------------------------------
+---------------------------------------
 
 - install node and node-waf
 
@@ -35,8 +49,8 @@ jsm README
   $ sudo make install
   $ sudo cp pm_common/pmutil* /usr/local/include
 
-2) Build jsm
-------------
+2) Build midivent
+-----------------
 
 $ cd src
 
