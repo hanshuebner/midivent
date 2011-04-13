@@ -15,7 +15,25 @@ jsm README
 
   Copy pmutil.h from hand to install directory
   $ sudo cp pm_common/pmutil /usr/local/include
-  
+
+1.1) Build steps under Ubuntu GNU/Linux  
+--------------------------------
+
+- install node and node-waf
+
+- install boost
+  $ sudo aptitude install libboost-all-dev
+
+- install portmidi
+  $ sudo aptitude install cmake-curses-gui
+  $ mkdir portmedia
+  $ cd portmedia
+  $ svn co https://portmedia.svn.sourceforge.net/svnroot/portmedia/portmidi/trunk portmidi
+  $ cd portmidi
+  $ ccmake . (press c to configure and g to generate and exit)
+  $ make
+  $ sudo make install
+  $ sudo cp pm_common/pmutil* /usr/local/include
 
 2) Build jsm
 ------------
