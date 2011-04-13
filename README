@@ -1,0 +1,34 @@
+jsm README
+----------
+
+1) Build steps under MacOSX
+---------------------------
+
+- install node and node-waf
+
+- install boost
+   $ port install boost
+
+- install portmidi
+  Build for 64-bit:
+  https://github.com/thomasjachmann/portmidi
+
+  Copy pmutil.h from hand to install directory
+  $ sudo cp pm_common/pmutil /usr/local/include
+  
+
+2) Build jsm
+------------
+
+$ cd src
+
+Edit wscript to set the correct portmidi location
+
+$ node-waf configure
+$ node-waf
+$ node-waf install
+
+3) Run test example
+-------------------
+
+$ node test-listen.js

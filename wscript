@@ -1,0 +1,20 @@
+import os;
+
+portmidi_home=os.getenv('HOME') + '/portmedia/portmidi'
+
+def set_options(opt):
+  opt.tool_options("compiler_cxx")
+
+def configure(conf):
+  conf.check_tool("compiler_cxx")
+  conf.check_tool("node_addon")
+  conf.check(lib='portmidi', libpath=[ portmidi_home ], uselib_store='PORTMIDI');
+  conf.check(lib='boost_thread-mt', libpath=[ '/opt/local/lib' ], uselib_store='BOOST_THREAD');
+
+def build(bld):
+  obj = bld.new_task_gen("cxx", "shlib", "node_addon")
+  obj.includes = portmidi_home + '/pm_common ' + portmidi_home + '/porttime' + ' /opt/local/include'
+  obj.cxxflags = ["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE", "-Wall" ]
+  obj.target = "MIDI"
+  obj.source = "MIDI.cc"
+  obj.uselib = "PORTMIDI BOOST_THREAD"

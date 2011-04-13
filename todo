@@ -1,0 +1,9 @@
+- improve sending and reception of these messages:
+
+midiTimeCode
+songPositionPointer
+
+They need argument parsing to relieve the application from having to
+deal with low-level bit formats.
+
+- improve exit behaviour
