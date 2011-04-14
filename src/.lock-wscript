@@ -1,9 +1,0 @@
-argv = ['/usr/local/bin/node-waf', 'configure']
-blddir = '/Users/hans/Dropbox/jsm/lib/midivent/src/build'
-commands = {'dist': 0, 'configure': True, 'distcheck': 0, 'install': 0, 'build': 0, 'clean': 0, 'distclean': 0, 'check': 0, 'uninstall': 0}
-cwd = '/Users/hans/Dropbox/jsm/lib/midivent/src'
-environ = {'GROUP': 'staff', 'LESS': 'cqmui', 'REMOTEHOST': '', 'VERSIONER_PYTHON_PREFER_32_BIT': 'no', 'TERM_PROGRAM_VERSION': '273.1', 'IRCNAME': 'Hans Huebner', 'LOGNAME': 'hans', 'USER': 'hans', 'HOME': '/Users/hans', 'PATH': '/opt/local/bin:/opt/local/sbin:/Users/hans/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/git/bin:/usr/X11/bin:/opt/local/bin:/usr/local/CrossPack-AVR/bin', 'DISPLAY': '/tmp/launch-IfdP27/org.x:0', 'TERM_PROGRAM': 'Apple_Terminal', 'LANG': 'de_DE.UTF-8', 'TERM': 'xterm-color', 'SHELL': '/bin/tcsh', 'VERSIONER_PYTHON_VERSION': '2.6', 'SHLVL': '1', 'EDITOR': 'emacsclient -nw', 'OSTYPE': 'darwin', 'IRCNICK': 'Hans_', 'VENDOR': 'apple', 'SSH_AUTH_SOCK': '/tmp/launch-8I5Ibz/Listeners', 'HOST': 'xanax.huebner.org', 'Apple_PubSub_Socket_Render': '/tmp/launch-ZyL6yw/Render', 'HOSTTYPE': 'intel-mac', 'TMPDIR': '/tmp', '__CF_USER_TEXT_ENCODING': '0x1F5:0:3', 'IRCSERVER': 'irc.fu-berlin.de', 'PWD': '/Users/hans/Dropbox/jsm/lib/midivent/src', 'MACHTYPE': 'x86_64', 'PAGER': 'less', 'COMMAND_MODE': 'unix2003'}
-files = []
-hash = 0
-options = {'compile_targets': None, 'force': False, 'verbose': 0, 'nocache': False, 'progress_bar': 0, 'destdir': '', 'keep': False, 'zones': '', 'blddir': '', 'prefix': '/usr/local/', 'jobs': 2, 'srcdir': '', 'check_cxx_compiler': 'g++'}
-srcdir = '/Users/hans/Dropbox/jsm/lib/midivent/src'

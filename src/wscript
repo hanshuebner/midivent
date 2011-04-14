@@ -1,3 +1,4 @@
+import Options;
 import os;
 
 portmidi_home=os.getenv('HOME') + '/portmedia/portmidi'
@@ -18,3 +19,4 @@ def build(bld):
   obj.target = "MIDI"
   obj.source = "MIDI.cc"
   obj.uselib = "PORTMIDI BOOST_THREAD"
+
