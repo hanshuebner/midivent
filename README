@@ -18,7 +18,10 @@ Building
 1) Build steps under MacOS X
 ----------------------------
 
-- install node and node-waf
+- install node, node-waf, npm
+
+- install underscore
+   $ npm install underscore
 
 - install boost
    $ port install boost
@@ -33,7 +36,10 @@ Building
 1.1) Build steps under Ubuntu GNU/Linux  
 ---------------------------------------
 
-- install node and node-waf
+- install node, node-waf, npm
+
+- install underscore
+   $ npm install underscore
 
 - install boost
   $ sudo aptitude install libboost-all-dev
