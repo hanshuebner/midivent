@@ -36,14 +36,13 @@
 #include <node.h>
 #include <node_events.h>
 
-#include <boost/thread.hpp>
-
 #include <portmidi.h>
 #include <pmutil.h>
 #include <porttime.h>
 
+#include "mutex.h"
+
 using namespace std;
-using namespace boost;
 using namespace v8;
 using namespace node;
 

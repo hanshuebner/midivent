@@ -23,9 +23,6 @@ Building
 - install underscore
    $ npm install underscore
 
-- install boost
-   $ port install boost
-
 - install portmidi
   Build for 64-bit:
   https://github.com/thomasjachmann/portmidi
@@ -40,9 +37,6 @@ Building
 
 - install underscore
    $ npm install underscore
-
-- install boost
-  $ sudo aptitude install libboost-all-dev
 
 - install portmidi
   $ sudo aptitude install cmake-curses-gui
