@@ -623,11 +623,7 @@ MIDIInput::New(const Arguments& args)
   HandleScope scope;
 
   try {
-    const char* portName = 0;
-    if (args[0] != Undefined()) {
-      portName = *String::Utf8Value(args[0]);
-    }
-    MIDIInput* midiInput = new MIDIInput(portName);
+    MIDIInput* midiInput = new MIDIInput((args[0] != Undefined()) ? *String::Utf8Value(args[0]) : 0);
     midiInput->Wrap(args.This());
     args.This()->Set(String::New("portName"), String::New(midiInput->portName().c_str()), ReadOnly);
 
@@ -1018,11 +1014,8 @@ MIDIOutput::New(const Arguments& args)
       latency = args[1]->Int32Value();
     }
 
-    const char* portName = 0;
-    if (args[0] != Undefined()) {
-      portName = *String::Utf8Value(args[0]);
-    }
-    MIDIOutput* midiOutput = new MIDIOutput(portName, latency);
+    MIDIOutput* midiOutput = new MIDIOutput((args[0] != Undefined()) ? *String::Utf8Value(args[0]) : 0,
+                                            latency);
     midiOutput->Wrap(args.This());
     args.This()->Set(String::New("portName"), String::New(midiOutput->portName().c_str()), ReadOnly);
 
