@@ -100,6 +100,54 @@ PortMidiJSException::message() const
 }
 
 // //////////////////////////////////////////////////////////////////
+// Class to be derived from by all porttime clients.  Starts and
+// stops the porttime timer thread as needed
+// //////////////////////////////////////////////////////////////////
+
+class PorttimeClient
+{
+public:
+  static void releasePorttime()
+  {
+    if (_clientCount) {
+      Pt_Stop();
+    }
+  }
+
+protected:
+  void addPorttimeClient()
+  {
+    unique_lock<mutex> lock(_mutex);
+
+    if (_clientCount == 0) {
+      Pt_Start(1, pollAll, 0);
+    }
+    _clientCount++;
+  }
+
+  void removePorttimeClient()
+  {
+    unique_lock<mutex> lock(_mutex);
+
+    if (_clientCount == 0) {
+      abort();
+    }
+    _clientCount--;
+    if (_clientCount == 0) {
+      Pt_Stop();
+    }
+  }
+
+private:
+  static mutex _mutex;
+  static unsigned _clientCount;
+  static void pollAll(PtTimestamp timestamp, void* userData);
+};
+
+mutex PorttimeClient::_mutex;
+unsigned PorttimeClient::_clientCount = 0;
+
+// //////////////////////////////////////////////////////////////////
 // Class to encapsulate MIDI utility functionality.  This class
 // implements the MIDI object's functions.
 // //////////////////////////////////////////////////////////////////
@@ -131,7 +179,9 @@ private:
   // TimedCallback implements a JS function that is scheduled to be
   // called synchronously to the MIDI clock.
   // //////////////////////////////////////////////////////////////////
-  class TimedCallback {
+  class TimedCallback
+    : protected PorttimeClient
+  {
   public:
     TimedCallback(PmTimestamp timestamp, Local<Function> callback)
       : _timestamp(timestamp),
@@ -200,13 +250,14 @@ private:
 // channels.
 // //////////////////////////////////////////////////////////////////
 class MIDIStream
+  : protected PorttimeClient
 {
 public:
   MIDIStream(MIDI::PortDirection direction,
              const char* portName);
 
   virtual ~MIDIStream();
-  virtual void close();
+  virtual void closePort();
 
   // portName() returns the name of the port actually chosen.  This
   // could be the port name passed as constructor argument, the one
@@ -214,8 +265,6 @@ public:
   // the first port.
   const string& portName() const { return _portName; }
   const int portId() const { return _portId; }
-
-  static Handle<Value> close(const Arguments& args);
 
 protected:
   PmStream* _pmMidiStream;
@@ -251,6 +300,7 @@ public:
   static Handle<Value> New(const Arguments& args);
   static Handle<Value> setFilters(const Arguments& args);
   static Handle<Value> recv(const Arguments& args);
+  static Handle<Value> close(const Arguments& args);
 
 private:
 
@@ -347,6 +397,7 @@ public:
 
   static Handle<Value> New(const Arguments& args);
   static Handle<Value> send(const Arguments& args);
+  static Handle<Value> close(const Arguments& args);
 };
 
 // //////////////////////////////////////////////////////////////////
@@ -541,29 +592,22 @@ MIDIStream::MIDIStream(MIDI::PortDirection direction, const char* portNameArg)
       throw JSException((string) "invalid MIDI " + directionName + " port name \"" + portName + "\"");
     }
   }
+
 }
 
 MIDIStream::~MIDIStream()
 {
-  close();
+  closePort();
 }
 
 void
-MIDIStream::close()
+MIDIStream::closePort()
 {
   if (_pmMidiStream) {
     Pm_Close(_pmMidiStream);
     _pmMidiStream = 0;
+    removePorttimeClient();
   }
-}
-
-Handle<Value>
-MIDIStream::close(const Arguments& args)
-{
-  HandleScope scope;
-  MIDIStream* midiStream = ObjectWrap::Unwrap<MIDIStream>(args.This());
-  midiStream->close();
-  return Undefined();
 }
 
 // //////////////////////////////////////////////////////////////////
@@ -585,6 +629,8 @@ MIDIInput::MIDIInput(const char* portName)
     throw PortMidiJSException("could not open MIDI input port", e);
   }
 
+  addPorttimeClient();
+
   unique_lock<mutex> lock(_receiversMutex);
   _receivers.insert(this);
 }
@@ -600,6 +646,10 @@ MIDIInput::setFilters(int32_t channels,
                       int32_t filters)
   throw(JSException)
 {
+  if (!_pmMidiStream) {
+    throw JSException("cannot set filters for closed MIDI stream");
+  }
+
   PmError e = Pm_SetChannelMask(_pmMidiStream, channels);
   if (e < 0) {
     throw PortMidiJSException("could not set MIDI channels", e);
@@ -887,11 +937,20 @@ MIDIInput::Initialize(Handle<Object> target)
   midiInputTemplate->Inherit(EventEmitter::constructor_template);
   midiInputTemplate->InstanceTemplate()->SetInternalFieldCount(1);
 
-  NODE_SET_PROTOTYPE_METHOD(midiInputTemplate, "close", MIDIStream::close);
+  NODE_SET_PROTOTYPE_METHOD(midiInputTemplate, "close", close);
   NODE_SET_PROTOTYPE_METHOD(midiInputTemplate, "setFilters", setFilters);
   NODE_SET_PROTOTYPE_METHOD(midiInputTemplate, "recv", recv);
 
   target->Set(String::NewSymbol("MIDIInput"), midiInputTemplate->GetFunction());
+}
+
+Handle<Value>
+MIDIInput::close(const Arguments& args)
+{
+  HandleScope scope;
+  MIDIInput* midiInput = ObjectWrap::Unwrap<MIDIInput>(args.This());
+  midiInput->closePort();
+  return Undefined();
 }
 
 // //////////////////////////////////////////////////////////////////
@@ -918,12 +977,18 @@ MIDIOutput::MIDIOutput(const char* portName, int32_t latency)
   if (e < 0) {
     throw PortMidiJSException("could not open MIDI output port", e);
   }
+
+  addPorttimeClient();
 }
 
 void
 MIDIOutput::send(const vector<unsigned char>& message, PmTimestamp when)
   throw(JSException)
 {
+  if (!_pmMidiStream) {
+    throw JSException("cannot send to closed MIDI stream");
+  }
+
   if (message.size() < 1) {
     throw JSException("cannot send message without content");
   }
@@ -1073,11 +1138,21 @@ MIDIOutput::send(const Arguments& args)
     }
 
     midiOutput->send(message, when);
+
     return Undefined();
   }
   catch (const JSException& e) {
     return e.asV8Exception();
   }
+}
+
+Handle<Value>
+MIDIOutput::close(const Arguments& args)
+{
+  HandleScope scope;
+  MIDIOutput* midiOutput = ObjectWrap::Unwrap<MIDIOutput>(args.This());
+  midiOutput->closePort();
+  return Undefined();
 }
 
 void
@@ -1088,7 +1163,7 @@ MIDIOutput::Initialize(Handle<Object> target)
   Handle<FunctionTemplate> midiOutputTemplate = FunctionTemplate::New(New);
   midiOutputTemplate->InstanceTemplate()->SetInternalFieldCount(1);
 
-  NODE_SET_PROTOTYPE_METHOD(midiOutputTemplate, "close", MIDIStream::close);
+  NODE_SET_PROTOTYPE_METHOD(midiOutputTemplate, "close", close);
   NODE_SET_PROTOTYPE_METHOD(midiOutputTemplate, "send", send);
 
   target->Set(String::NewSymbol("MIDIOutput"), midiOutputTemplate->GetFunction());
@@ -1098,22 +1173,24 @@ MIDIOutput::Initialize(Handle<Object> target)
 // Initialization interface
 // //////////////////////////////////////////////////////////////////
 
-extern "C" {
-  static void
-  pollAll(PtTimestamp timestamp, void* userData)
-  {
-    MIDIInput::pollAll();
-    MIDIOutput::checkScheduledSends(timestamp);
-    MIDI::runTimedCallbacks(timestamp);
-  }
 
+void
+PorttimeClient::pollAll(PtTimestamp timestamp, void* userData)
+{
+  MIDIInput::pollAll();
+  MIDIOutput::checkScheduledSends(timestamp);
+  MIDI::runTimedCallbacks(timestamp);
+}
+
+extern "C" {
+  
   static void init (Handle<Object> target)
   {
-    Pt_Start(1, pollAll, 0);
     Pm_Initialize();
     HandleScope handleScope;
     
     MIDI::Initialize(target);
+    atexit(PorttimeClient::releasePorttime);
   }
 
   NODE_MODULE(MIDI, init);
