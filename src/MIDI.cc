@@ -100,52 +100,39 @@ PortMidiJSException::message() const
 }
 
 // //////////////////////////////////////////////////////////////////
-// Class to be derived from by all porttime clients.  Starts and
-// stops the porttime timer thread as needed
+// Class to handle starting and stopping the porttime timer thread as
+// needed
 // //////////////////////////////////////////////////////////////////
 
-class PorttimeClient
+class Porttime
 {
 public:
-  static void releasePorttime()
+  static void stop()
   {
-    if (_clientCount) {
+    if (_running) {
       Pt_Stop();
+      _running = false;
     }
   }
 
-protected:
-  void addPorttimeClient()
+  static void start()
   {
     unique_lock<mutex> lock(_mutex);
 
-    if (_clientCount == 0) {
+    if (!_running) {
       Pt_Start(1, pollAll, 0);
-    }
-    _clientCount++;
-  }
-
-  void removePorttimeClient()
-  {
-    unique_lock<mutex> lock(_mutex);
-
-    if (_clientCount == 0) {
-      abort();
-    }
-    _clientCount--;
-    if (_clientCount == 0) {
-      Pt_Stop();
+      _running = true;
     }
   }
 
 private:
   static mutex _mutex;
-  static unsigned _clientCount;
+  static bool _running;
   static void pollAll(PtTimestamp timestamp, void* userData);
 };
 
-mutex PorttimeClient::_mutex;
-unsigned PorttimeClient::_clientCount = 0;
+mutex Porttime::_mutex;
+bool Porttime::_running = false;
 
 // //////////////////////////////////////////////////////////////////
 // Class to encapsulate MIDI utility functionality.  This class
@@ -180,7 +167,6 @@ private:
   // called synchronously to the MIDI clock.
   // //////////////////////////////////////////////////////////////////
   class TimedCallback
-    : protected PorttimeClient
   {
   public:
     TimedCallback(PmTimestamp timestamp, Local<Function> callback)
@@ -250,7 +236,6 @@ private:
 // channels.
 // //////////////////////////////////////////////////////////////////
 class MIDIStream
-  : protected PorttimeClient
 {
 public:
   MIDIStream(MIDI::PortDirection direction,
@@ -606,7 +591,6 @@ MIDIStream::closePort()
   if (_pmMidiStream) {
     Pm_Close(_pmMidiStream);
     _pmMidiStream = 0;
-    removePorttimeClient();
   }
 }
 
@@ -628,8 +612,6 @@ MIDIInput::MIDIInput(const char* portName)
   if (e < 0) {
     throw PortMidiJSException("could not open MIDI input port", e);
   }
-
-  addPorttimeClient();
 
   unique_lock<mutex> lock(_receiversMutex);
   _receivers.insert(this);
@@ -977,8 +959,6 @@ MIDIOutput::MIDIOutput(const char* portName, int32_t latency)
   if (e < 0) {
     throw PortMidiJSException("could not open MIDI output port", e);
   }
-
-  addPorttimeClient();
 }
 
 void
@@ -1175,7 +1155,7 @@ MIDIOutput::Initialize(Handle<Object> target)
 
 
 void
-PorttimeClient::pollAll(PtTimestamp timestamp, void* userData)
+Porttime::pollAll(PtTimestamp timestamp, void* userData)
 {
   MIDIInput::pollAll();
   MIDIOutput::checkScheduledSends(timestamp);
@@ -1186,11 +1166,13 @@ extern "C" {
   
   static void init (Handle<Object> target)
   {
+    Porttime::start();
+
     Pm_Initialize();
     HandleScope handleScope;
     
     MIDI::Initialize(target);
-    atexit(PorttimeClient::releasePorttime);
+    atexit(Porttime::stop);
   }
 
   NODE_MODULE(MIDI, init);

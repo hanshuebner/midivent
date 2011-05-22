@@ -87,6 +87,8 @@ catch (e) {
     console.log('caught expected error:', e);
 }
 
+console.log('starting timer', MIDI.currentTime());
 MIDI.at(3000, function () { console.log("should be all done, time is", MIDI.currentTime()); });
+console.log('done', MIDI.currentTime());
 
 process.on('exit', function () { console.log('exiting, current time is', MIDI.currentTime()); });
